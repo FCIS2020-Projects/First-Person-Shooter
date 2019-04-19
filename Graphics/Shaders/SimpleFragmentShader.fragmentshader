@@ -1,0 +1,20 @@
+#version 330 core
+
+in vec3 fragColor;
+
+out vec3 color;
+
+in vec2 TexCoord;
+uniform sampler2D myTextureSampler;
+
+
+
+
+void main()
+{
+	vec3 textureColor = texture( myTextureSampler, TexCoord ).rgb;
+
+
+	color = textureColor;
+
+}
