@@ -9,12 +9,13 @@ namespace Graphics
 {
     class Camera
     {
-        float mAngleX = 0;
-        float mAngleY = 0;
+        public float mAngleX = 0;
+        public float mAngleY = 0;
         vec3 mDirection;
         vec3 mPosition;
         vec3 mRight;
         vec3 mUp;
+        vec3 centerPos;
         mat4 mViewMatrix;
         mat4 mProjectionMatrix;
         public Camera()
@@ -41,10 +42,16 @@ namespace Graphics
         {
             return mPosition;
         }
+
+        public vec3 GetCameraTarget()
+        {
+            return centerPos;
+        }
+
         public void Reset(float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ)
         {
             vec3 eyePos = new vec3(eyeX, eyeY, eyeZ);
-            vec3 centerPos = new vec3(centerX, centerY, centerZ);
+            centerPos = new vec3(centerX, centerY, centerZ);
             vec3 upVec = new vec3(upX, upY, upZ);
 
             mPosition = eyePos;
@@ -66,9 +73,8 @@ namespace Graphics
             mRight = glm.cross(mDirection, new vec3(0, 1, 0));
             mUp = glm.cross(mRight, mDirection);
 
-            vec3 center = mPosition + mDirection;
-
-            mViewMatrix = glm.lookAt(mPosition, center, mUp);
+            centerPos = mPosition + mDirection;
+            mViewMatrix = glm.lookAt(mPosition, centerPos, mUp);
         }
         public void SetProjectionMatrix(float FOV, float aspectRatio, float near, float far)
         {
@@ -92,7 +98,10 @@ namespace Graphics
 
         public void Walk(float dist)
         {
+            float temp = mDirection.y;
+            mDirection.y = 0;
             mPosition += dist * mDirection;
+            mDirection.y = temp;
         }
         public void Strafe(float dist)
         {

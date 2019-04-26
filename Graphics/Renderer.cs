@@ -43,6 +43,13 @@ namespace Graphics
         Texture d, u, l, r, f, b, groundTexture;
         mat4 down, up, left, right, front, back, ground;
 
+        vec3 playerPos;
+        Model3D HandsWGun;
+        Texture shoot;
+        float zombieSpeed = 0.4f;
+        int Enemy_range_Attack = 50;
+        int Enemy_range_Run = 200;
+
         public void Initialize()
         {
 
@@ -55,6 +62,10 @@ namespace Graphics
             f = new Texture(projectPath + "\\Textures\\skybox\\front.jpg", 5, true);
             b = new Texture(projectPath + "\\Textures\\skybox\\back.jpg", 6, true);
             groundTexture = new Texture(projectPath + "\\Textures\\ground.jpg", 7, true);
+            shoot = new Texture(projectPath + "\\Textures\\gunshot.png", 8, true);
+            cam = new Camera();
+            cam.Reset(0, 34, 55, 0, 0, 0, 0, 1, 0);
+
             float[] square = {
                 -1,0,1,   1,0,0,   0,0,
                 1,0,1,    1,0,0,   1,0,
@@ -99,18 +110,18 @@ namespace Graphics
                 glm.translate(new mat4(1), new vec3(0, -45, 0))
             });
             building = new Model3D();
-            building.LoadFile(projectPath + "\\ModelFiles\\static\\building", "Building 02.obj", 1);
+            building.LoadFile(projectPath + "\\ModelFiles\\static\\building", 1, "Building 02.obj");
             building.scalematrix = glm.scale(new mat4(1), new vec3(30, 30, 30));
             building.transmatrix = glm.translate(new mat4(1), new vec3(1, 1, 1));
 
             car = new Model3D();
-            car.LoadFile(projectPath + "\\ModelFiles\\static\\car", "dpv.obj", 3);
+            car.LoadFile(projectPath + "\\ModelFiles\\static\\car", 3, "dpv.obj");
             car.scalematrix = glm.scale(new mat4(1), new vec3(0.15f, 0.25f, 0.15f));
             car.transmatrix = glm.translate(new mat4(1), new vec3(-150, -45.0f, 0.5f));
             car.rotmatrix = glm.rotate(3.1412f, new vec3(0, 1, 0));
 
             tree = new Model3D();
-            tree.LoadFile(projectPath + "\\ModelFiles\\static\\tree", "Tree.obj", 2);
+            tree.LoadFile(projectPath + "\\ModelFiles\\static\\tree", 2, "Tree.obj");
             tree.scalematrix = glm.scale(new mat4(1), new vec3(50, 50, 50));
             tree.transmatrix = glm.translate(new mat4(1), new vec3(-240, -45.0f, 0.5f));
             tree.rotmatrix = glm.rotate(3.1412f, new vec3(0, 1, 0));
@@ -128,30 +139,30 @@ namespace Graphics
 
             
             spider = new Model3D();
-            spider.LoadFile(projectPath + "\\ModelFiles\\static\\spider", "spider.obj", 4);
+            spider.LoadFile(projectPath + "\\ModelFiles\\static\\spider", 4, "spider.obj");
             spider.transmatrix = glm.translate(new mat4(1), new vec3(240, 0.0f, 0));
             spider.rotmatrix = glm.rotate((float)((-90.0f / 180) * Math.PI), new vec3(0, 1, 0));
 
+            HandsWGun = new Model3D();
+            HandsWGun.LoadFile(projectPath + "\\ModelFiles\\hands with gun", 8, "gun.obj");
+            HandsWGun.scalematrix = glm.scale(new mat4(1), new vec3(0.2f, 0.2f, 0.2f));
+    
 
             sh.UseShader();
             Gl.glClearColor(0, 0, 0.4f, 1);
 
-            modelID = Gl.glGetUniformLocation(sh.ID, "model");
         
-            cam = new Camera();
-            cam.Reset(0, 34, 55, 0, 0, 0, 0, 1, 0);
 
             ProjectionMatrix = cam.GetProjectionMatrix();
             ViewMatrix = cam.GetViewMatrix();
 
+            modelID = Gl.glGetUniformLocation(sh.ID, "model");
             projID = Gl.glGetUniformLocation(sh.ID, "projection");
             viewID = Gl.glGetUniformLocation(sh.ID, "view");
 
             sh.UseShader();
 
-            Gl.glEnable(Gl.GL_DEPTH_TEST);
-            Gl.glDepthFunc(Gl.GL_LESS);
-            
+            c = timer;
         }
 
         public void Draw()
@@ -171,14 +182,15 @@ namespace Graphics
             // FOR TEXTURE
             Gl.glEnableVertexAttribArray(2);
             Gl.glVertexAttribPointer(2, 2, Gl.GL_FLOAT, Gl.GL_FALSE, 8 * sizeof(float), (IntPtr)(6 * sizeof(float)));
+
+            Gl.glUniformMatrix4fv(projID, 1, Gl.GL_FALSE, ProjectionMatrix.to_array());
             float[] viewmat = cam.GetViewMatrix().to_array();
             viewmat[12] = 0;
             viewmat[13] = 0;
             viewmat[14] = 0;
             viewmat[15] = 1;
             Gl.glUniformMatrix4fv(viewID, 1, Gl.GL_FALSE, viewmat);
-            Gl.glDisable(Gl.GL_DEPTH_TEST);
-
+            
             u.Bind();
             Gl.glUniformMatrix4fv(modelID, 1, Gl.GL_FALSE, up.to_array());
             Gl.glDrawArrays(Gl.GL_TRIANGLES, 0, 6);
@@ -203,26 +215,117 @@ namespace Graphics
             Gl.glUniformMatrix4fv(modelID, 1, Gl.GL_FALSE, back.to_array());
             Gl.glDrawArrays(Gl.GL_TRIANGLES, 0, 6);
 
-            Gl.glEnable(Gl.GL_DEPTH_TEST);
-
-            Gl.glUniformMatrix4fv(projID, 1, Gl.GL_FALSE, ProjectionMatrix.to_array());
             Gl.glUniformMatrix4fv(viewID, 1, Gl.GL_FALSE, ViewMatrix.to_array());
             Gl.glUniform3fv(EyePositionID, 1, cam.GetCameraPosition().to_array());
-
-
             //ground
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+
             groundTexture.Bind();
             Gl.glUniformMatrix4fv(modelID, 1, Gl.GL_FALSE, ground.to_array());
             Gl.glDrawArrays(Gl.GL_TRIANGLES, 0, 6);
+
+            playerPos = cam.GetCameraTarget();
+            playerPos.y -= 2.8f;
+
+            HandsWGun.transmatrix = glm.translate(new mat4(1), playerPos);
+            HandsWGun.rotmatrix = MathHelper.MultiplyMatrices(new List<mat4>(){
+                glm.rotate(-cam.mAngleY, new vec3(1, 0, 0)),
+                glm.rotate(3.1412f + cam.mAngleX, new vec3(0, 1, 0))
+            });
+
 
             spider.Draw(modelID);
             building.Draw(modelID);
             car.Draw(modelID);
             Blade.Draw(modelID);
             zombie.Draw(modelID);
-
             tree.Draw(modelID);
+            HandsWGun.Draw(modelID);
+
+            Gl.glBindBuffer(Gl.GL_ARRAY_BUFFER, skyboxBuffer_ID);
+
+            Gl.glEnableVertexAttribArray(0);
+            Gl.glVertexAttribPointer(0, 3, Gl.GL_FLOAT, Gl.GL_FALSE, 8 * sizeof(float), (IntPtr)(0 * sizeof(float)));
+            //FOR COLOR
+            Gl.glEnableVertexAttribArray(1);
+            Gl.glVertexAttribPointer(1, 3, Gl.GL_FLOAT, Gl.GL_FALSE, 8 * sizeof(float), (IntPtr)(3 * sizeof(float)));
+            // FOR TEXTURE
+            Gl.glEnableVertexAttribArray(2);
+            Gl.glVertexAttribPointer(2, 2, Gl.GL_FLOAT, Gl.GL_FALSE, 8 * sizeof(float), (IntPtr)(6 * sizeof(float)));
+
+         
+            shoot.Bind();
+            vec3 shootpos = cam.GetCameraTarget();
+            shootpos.y -= 1.5f;
+            shootpos += cam.GetLookDirection() * 8;
+
+            Gl.glUniformMatrix4fv(modelID, 1, Gl.GL_FALSE, MathHelper.MultiplyMatrices(new List<mat4>() {
+                glm.rotate(cam.mAngleX, new vec3(0, 1, 0)),glm.rotate((float)c/10, new vec3(0, 0, 1)),
+                glm.translate(new mat4(1),shootpos)
+            }).to_array());
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            if (draw)
+            {
+                Gl.glDrawArrays(Gl.GL_TRIANGLES, 0, 6);
+                c--;
+                if (c < 0)
+                {
+                    c = timer;
+                    draw = false;
+                }
+            }
+            Gl.glDisable(Gl.GL_BLEND);
+
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+
+
+            vec3 zombiePosition;
+            zombiePosition.x = zombie.TranslationMatrix[3].x;
+            zombiePosition.y = zombie.TranslationMatrix[3].y;
+            zombiePosition.z = zombie.TranslationMatrix[3].z;
+
+            vec3 zombieRotation = new vec3(0,-1,0);
+            zombieRotation = zombie.rotationMatrix.to_mat3() * zombieRotation;
+
+            vec3 camposition = cam.GetCameraPosition();
+
+            vec3 zombieDirection = camposition - zombiePosition;
+            zombieDirection = glm.normalize(zombieDirection);
+            zombieDirection.y = 0;
+            double distance = Math.Sqrt(Math.Pow(camposition.x - zombiePosition.x, 2) +
+                                        Math.Pow(camposition.y - zombiePosition.y, 2) +
+                                        Math.Pow(camposition.z - zombiePosition.z, 2));
+
+            if (distance < Enemy_range_Run && distance > Enemy_range_Attack)
+            {
+                if (zombie.animSt.type != animType_LOL.RUN)
+                {
+                    zombie.StartAnimation(animType_LOL.RUN);
+                }
+                zombie.TranslationMatrix = glm.translate(zombie.TranslationMatrix, zombieDirection*zombieSpeed);
+            }
+            else if(distance < Enemy_range_Attack)
+            {
+                if (zombie.animSt.type != animType_LOL.ATTACK1)
+                {
+                    zombie.StartAnimation(animType_LOL.ATTACK1);
+                }
+            }
+            else
+            {
+                if (zombie.animSt.type == animType_LOL.RUN)
+                {
+                    zombie.StartAnimation(animType_LOL.STAND);
+                }
+            }
+            float dotProduct = glm.dot(zombieRotation, zombieDirection);
+            if(dotProduct < 0.7)
+                zombie.rotationMatrix = glm.rotate(zombie.rotationMatrix, (float)(5.0 / 180.0 *Math.PI), new vec3(0,0,1));
         }
+        public bool draw = false;
+        int timer = 10;
+        int c;
         public void Update(float deltaTime)
         {
             cam.UpdateViewMatrix();
@@ -231,6 +334,8 @@ namespace Graphics
 
             zombie.UpdateAnimation();
             Blade.UpdateAnimation();
+
+            
         }
         public void CleanUp()
         {

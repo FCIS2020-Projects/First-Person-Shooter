@@ -64,6 +64,7 @@
             this.simpleOpenGlControl1.Paint += new System.Windows.Forms.PaintEventHandler(this.simpleOpenGlControl1_Paint);
             this.simpleOpenGlControl1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.SimpleOpenGlControl1_KeyDown);
             this.simpleOpenGlControl1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.SimpleOpenGlControl1_KeyUp);
+            this.simpleOpenGlControl1.MouseClick += new System.Windows.Forms.MouseEventHandler(this.SimpleOpenGlControl1_MouseClick);
             this.simpleOpenGlControl1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.simpleOpenGlControl1_MouseMove);
             // 
             // label5

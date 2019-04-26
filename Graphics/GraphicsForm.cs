@@ -27,7 +27,14 @@ namespace Graphics
         }
         void initialize()
         {
-            renderer.Initialize();   
+            renderer.Initialize();
+            //while (true)
+            //{
+                renderer.Draw();
+                renderer.Update(deltaTime);
+
+            //}
+
         }
         void MainLoop()
         {
@@ -185,6 +192,11 @@ namespace Graphics
             label6.Text = "X: " + renderer.cam.GetCameraPosition().x;
             label7.Text = "Y: " + renderer.cam.GetCameraPosition().y;
             label8.Text = "Z: " + renderer.cam.GetCameraPosition().z;*/
+        }
+
+        private void SimpleOpenGlControl1_MouseClick(object sender, MouseEventArgs e)
+        {
+            renderer.draw = true;
         }
 
         private void simpleOpenGlControl1_Load(object sender, EventArgs e)
