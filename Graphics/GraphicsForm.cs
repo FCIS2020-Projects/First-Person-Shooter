@@ -3,6 +3,7 @@ using System.Threading;
 using System.Drawing;
 using System.Diagnostics;
 using System;
+using System.Collections.Generic;
 
 namespace Graphics
 {
@@ -193,9 +194,9 @@ namespace Graphics
             label7.Text = "Y: " + renderer.cam.GetCameraPosition().y;
             label8.Text = "Z: " + renderer.cam.GetCameraPosition().z;*/
         }
-
         private void SimpleOpenGlControl1_MouseClick(object sender, MouseEventArgs e)
         {
+            renderer.bullets.Add(new bullet(renderer.bulletModel, renderer.cam));
             renderer.draw = true;
         }
 

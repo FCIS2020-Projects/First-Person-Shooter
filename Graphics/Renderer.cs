@@ -45,10 +45,13 @@ namespace Graphics
 
         vec3 playerPos;
         Model3D HandsWGun;
+        public Model3D bulletModel;
         Texture shoot;
         float zombieSpeed = 0.4f;
         int Enemy_range_Attack = 50;
         int Enemy_range_Run = 200;
+
+        public List<bullet> bullets = new List<bullet>();
 
         public void Initialize()
         {
@@ -146,7 +149,10 @@ namespace Graphics
             HandsWGun = new Model3D();
             HandsWGun.LoadFile(projectPath + "\\ModelFiles\\hands with gun", 8, "gun.obj");
             HandsWGun.scalematrix = glm.scale(new mat4(1), new vec3(0.2f, 0.2f, 0.2f));
-    
+
+            bulletModel = new Model3D();
+            bulletModel.LoadFile(projectPath + "\\ModelFiles\\static\\bullet", 8, "bullet.obj");
+            
 
             sh.UseShader();
             Gl.glClearColor(0, 0, 0.4f, 1);
@@ -319,9 +325,20 @@ namespace Graphics
                     zombie.StartAnimation(animType_LOL.STAND);
                 }
             }
-            float dotProduct = glm.dot(zombieRotation, zombieDirection);
-            if(dotProduct < 0.7)
-                zombie.rotationMatrix = glm.rotate(zombie.rotationMatrix, (float)(5.0 / 180.0 *Math.PI), new vec3(0,0,1));
+            vec3 crossProduct = glm.cross(zombieRotation, zombieDirection);
+            
+            if (crossProduct.y != 0)
+            {
+                if(crossProduct.y > 0)
+                    zombie.rotationMatrix = glm.rotate(zombie.rotationMatrix, (float)(5.0 / 180.0 *Math.PI), new vec3(0,0,1));
+                else
+                    zombie.rotationMatrix = glm.rotate(zombie.rotationMatrix, (float)(-5.0 / 180.0 * Math.PI), new vec3(0, 0, 1));
+            }
+            for (int i = 0; i < bullets.Count; i++)
+            {
+                bullets[i].Draw(modelID);
+                
+            }
         }
         public bool draw = false;
         int timer = 10;
@@ -335,7 +352,12 @@ namespace Graphics
             zombie.UpdateAnimation();
             Blade.UpdateAnimation();
 
-            
+            for (int i = 0; i < bullets.Count; i++)
+            {
+                bullets[i].Update();
+                if(bullets[i].shouldBeDestroyed())
+                    bullets.RemoveAt(i);
+            }
         }
         public void CleanUp()
         {

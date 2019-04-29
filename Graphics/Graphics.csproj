@@ -80,6 +80,7 @@
   <ItemGroup>
     <Compile Include="3D Models\md2.cs" />
     <Compile Include="3D Models\md2LOL.cs" />
+    <Compile Include="bullet.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="GPU.cs" />
     <Compile Include="GraphicsForm.cs">
